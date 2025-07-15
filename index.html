@@ -1,0 +1,1857 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>路侧设施排查台账系统</title>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* 样式保持不变 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        :root {
+            --primary: #2c6fbb;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --gray: #6c757d;
+            --border: #dee2e6;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            color: var(--dark);
+            line-height: 1.6;
+            padding: 10px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(120deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .logo i {
+            font-size: 2.5rem;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 12px;
+            border-radius: 50%;
+        }
+        
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+        }
+        
+        .tabs {
+            display: flex;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            padding: 5px;
+            margin: 0 auto;
+            max-width: 90%;
+        }
+        
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            position: relative;
+        }
+        
+        .tab.active {
+            background: white;
+            color: var(--primary);
+        }
+        
+        .tab:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .tab-indicator {
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 5px;
+            height: 5px;
+            background: white;
+            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .tab.active .tab-indicator {
+            opacity: 1;
+        }
+        
+        .content-section {
+            padding: 20px;
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .content-section.active {
+            display: block;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+        
+        .card-title {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border);
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--dark);
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        
+        .btn:hover {
+            background: #1a5a9e;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-block {
+            display: block;
+            width: 100%;
+        }
+        
+        .btn-success {
+            background: var(--success);
+        }
+        
+        .btn-warning {
+            background: var(--warning);
+            color: var(--dark);
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+        }
+        
+        .btn-secondary {
+            background: var(--gray);
+        }
+        
+        .btn i {
+            margin-right: 8px;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .stat-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            border-top: 4px solid var(--primary);
+        }
+        
+        .stat-card.warning {
+            border-top-color: var(--warning);
+        }
+        
+        .stat-card.danger {
+            border-top-color: var(--danger);
+        }
+        
+        .stat-card.success {
+            border-top-color: var(--success);
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.95rem;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        th {
+            background-color: #f1f7fd;
+            color: var(--primary);
+            font-weight: 600;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f9fbfd;
+        }
+        
+        tr:hover {
+            background-color: #edf6ff;
+        }
+        
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .status-pending {
+            background: rgba(255, 193, 7, 0.2);
+            color: #b58a00;
+        }
+        
+        .status-in-progress {
+            background: rgba(52, 152, 219, 0.2);
+            color: #1a5a9e;
+        }
+        
+        .status-completed {
+            background: rgba(40, 167, 69, 0.2);
+            color: #1e7e34;
+        }
+        
+        .action-cell {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .action-btn {
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            border: none;
+        }
+        
+        .edit-btn {
+            background: rgba(52, 152, 219, 0.1);
+            color: var(--secondary);
+            border: 1px solid rgba(52, 152, 219, 0.3);
+        }
+        
+        .delete-btn {
+            background: rgba(220, 53, 69, 0.1);
+            color: var(--danger);
+            border: 1px solid rgba(220, 53, 69, 0.3);
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: var(--gray);
+        }
+        
+        .no-data i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.3;
+        }
+        
+        .import-export {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--gray);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border);
+        }
+        
+        .config-card {
+            background: #f8f9fa;
+            border-left: 4px solid var(--secondary);
+        }
+        
+        .config-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .config-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+        
+        .add-btn {
+            background: var(--success);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 15px;
+            cursor: pointer;
+        }
+        
+        .item-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 15px;
+        }
+        
+        .item-tag {
+            background: var(--light);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 5px 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .item-tag .delete {
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .recent-item {
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .filter-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .chart-container {
+            height: 300px;
+            margin-top: 20px;
+            position: relative;
+        }
+        
+        .status-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .status-option {
+            padding: 5px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            background: #f1f1f1;
+            transition: all 0.3s;
+        }
+        
+        .status-option.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .edit-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-title {
+            margin-bottom: 20px;
+            color: var(--primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-close {
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray);
+        }
+
+        /* 配置按钮 */
+        .config-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: white;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+        }
+        
+        .config-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(45deg);
+        }
+        
+        .recent-item .location {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .recent-item .details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+        
+        .recent-item .details span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .recent-records-container {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .stat-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+            
+            .import-export {
+                flex-direction: column;
+            }
+            
+            .table-container {
+                overflow-x: auto;
+            }
+            
+            table {
+                min-width: 700px;
+            }
+            
+            .config-group {
+                flex-direction: column;
+            }
+            
+            .filter-bar {
+                flex-direction: column;
+            }
+            
+            .filter-group {
+                min-width: 100%;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .stat-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .tabs {
+                flex-direction: column;
+                border-radius: 12px;
+            }
+            
+            .tab {
+                border-radius: 8px;
+                margin-bottom: 5px;
+            }
+            
+            header {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .config-btn {
+                top: 10px;
+                right: 10px;
+                width: 35px;
+                height: 35px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <button class="config-btn" id="configBtn" title="数据配置">
+                <i class="fas fa-cog"></i>
+            </button>
+            
+            <div class="logo">
+                <i class="fas fa-road"></i>
+                <div>
+                    <h1>路侧设施排查台账系统</h1>
+                </div>
+            </div>
+            
+            <div class="tabs">
+                <div class="tab active" data-target="record">问题登记
+                    <div class="tab-indicator"></div>
+                </div>
+                <div class="tab" data-target="data">数据台账
+                    <div class="tab-indicator"></div>
+                </div>
+                <div class="tab" data-target="stats">统计分析
+                    <div class="tab-indicator"></div>
+                </div>
+                <div class="tab" data-target="import-export">导入导出
+                    <div class="tab-indicator"></div>
+                </div>
+            </div>
+        </header>
+        
+        <main>
+            <!-- 登记表单 -->
+            <section id="record" class="content-section active">
+                <div class="card">
+                    <h2 class="card-title"><i class="fas fa-clipboard-list"></i> 排查问题登记</h2>
+                    <form id="issueForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="direction">方向 *</label>
+                                <select id="direction" required>
+                                    <option value="">请选择方向</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="location">位置描述 *</label>
+                                <input type="text" id="location" required placeholder="例如：G25高速K125+300">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="facilityType">设施类型 *</label>
+                                <select id="facilityType" required>
+                                    <option value="">请选择设施类型</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="problemType">问题类型 *</label>
+                                <select id="problemType" required>
+                                    <option value="">请选择问题类型</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="severity">严重程度</label>
+                                <select id="severity">
+                                    <option value="低">低</option>
+                                    <option value="中" selected>中</option>
+                                    <option value="高">高</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="inspector">排查人员 *</label>
+                                <select id="inspector" required>
+                                    <option value="">请选择排查人员</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="description">问题描述</label>
+                            <textarea id="description" rows="3" placeholder="详细描述问题情况..."></textarea>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="date">排查日期 *</label>
+                                <input type="date" id="date" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="status">状态</label>
+                                <select id="status">
+                                    <option value="待处理">待处理</option>
+                                    <option value="处理中">处理中</option>
+                                    <option value="已完成">已完成</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-block"><i class="fas fa-save"></i> 保存记录</button>
+                    </form>
+                </div>
+                
+                <div class="card">
+                    <h2 class="card-title"><i class="fas fa-history"></i> 最近记录</h2>
+                    <div id="recentRecords" class="no-data">
+                        <i class="fas fa-inbox"></i>
+                        <p>暂无最近记录</p>
+                    </div>
+                    <div id="recentRecordsList" class="recent-records-container" style="display: none;"></div>
+                </div>
+            </section>
+            
+            <!-- 数据配置 -->
+            <section id="config" class="content-section">
+                <div class="card config-card">
+                    <h2 class="card-title"><i class="fas fa-cog"></i> 方向配置</h2>
+                    <div class="form-group">
+                        <div class="config-group">
+                            <input type="text" id="newDirection" class="config-input" placeholder="输入新方向（例如：上行方向）">
+                            <button id="addDirection" class="add-btn"><i class="fas fa-plus"></i> 添加</button>
+                        </div>
+                        <div class="item-list" id="directionList">
+                            <!-- 方向标签将通过JavaScript填充 -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card config-card">
+                    <h2 class="card-title"><i class="fas fa-cog"></i> 设施类型配置</h2>
+                    <div class="form-group">
+                        <div class="config-group">
+                            <input type="text" id="newFacilityType" class="config-input" placeholder="输入新设施类型（例如：波形梁护栏立柱反光膜）">
+                            <button id="addFacilityType" class="add-btn"><i class="fas fa-plus"></i> 添加</button>
+                        </div>
+                        <div class="item-list" id="facilityTypeList">
+                            <!-- 设施类型标签将通过JavaScript填充 -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card config-card">
+                    <h2 class="card-title"><i class="fas fa-cog"></i> 问题类型配置</h2>
+                    <div class="form-group">
+                        <div class="config-group">
+                            <input type="text" id="newProblemType" class="config-input" placeholder="输入新问题类型（例如：缺失）">
+                            <button id="addProblemType" class="add-btn"><i class="fas fa-plus"></i> 添加</button>
+                        </div>
+                        <div class="item-list" id="problemTypeList">
+                            <!-- 问题类型标签将通过JavaScript填充 -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card config-card">
+                    <h2 class="card-title"><i class="fas fa-cog"></i> 排查人员配置</h2>
+                    <div class="form-group">
+                        <div class="config-group">
+                            <input type="text" id="newInspector" class="config-input" placeholder="输入新排查人员姓名">
+                            <button id="addInspector" class="add-btn"><i class="fas fa-plus"></i> 添加</button>
+                        </div>
+                        <div class="item-list" id="inspectorList">
+                            <!-- 排查人员标签将通过JavaScript填充 -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- 数据台账 -->
+            <section id="data" class="content-section">
+                <div class="card">
+                    <h2 class="card-title"><i class="fas fa-table"></i> 排查数据台账</h2>
+                    
+                    <div class="filter-bar">
+                        <div class="filter-group">
+                            <label for="filterStatus">状态筛选</label>
+                            <select id="filterStatus">
+                                <option value="all">全部状态</option>
+                                <option value="待处理">待处理</option>
+                                <option value="处理中">处理中</option>
+                                <option value="已完成">已完成</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filterFacility">设施类型</label>
+                            <select id="filterFacility">
+                                <option value="all">全部设施</option>
+                                <!-- 选项将通过JavaScript填充 -->
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filterProblem">问题类型</label>
+                            <select id="filterProblem">
+                                <option value="all">全部问题</option>
+                                <!-- 选项将通过JavaScript填充 -->
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filterSeverity">严重程度</label>
+                            <select id="filterSeverity">
+                                <option value="all">全部级别</option>
+                                <option value="低">低</option>
+                                <option value="中">中</option>
+                                <option value="高">高</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table id="dataTable">
+                            <thead>
+                                <tr>
+                                    <th>方向</th>
+                                    <th>位置</th>
+                                    <th>设施类型</th>
+                                    <th>问题类型</th>
+                                    <th>严重程度</th>
+                                    <th>排查人</th>
+                                    <th>排查日期</th>
+                                    <th>状态</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody">
+                                <!-- 数据将通过JavaScript填充 -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="no-data" id="noTableData" style="display: none;">
+                        <i class="fas fa-database"></i>
+                        <p>暂无排查数据记录</p>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- 统计分析 -->
+            <section id="stats" class="content-section">
+                <div class="card">
+                    <h2 class="card-title"><i class="fas fa-chart-pie"></i> 排查数据统计</h2>
+                    
+                    <div class="stat-cards">
+                        <div class="stat-card">
+                            <div class="stat-label">总记录数</div>
+                            <div class="stat-value" id="totalCount">0</div>
+                        </div>
+                        <div class="stat-card warning">
+                            <div class="stat-label">待处理问题</div>
+                            <div class="stat-value" id="pendingCount">0</div>
+                        </div>
+                        <div class="stat-card danger">
+                            <div class="stat-label">严重问题</div>
+                            <div class="stat-value" id="criticalCount">0</div>
+                        </div>
+                        <div class="stat-card success">
+                            <div class="stat-label">已处理问题</div>
+                            <div class="stat-value" id="resolvedCount">0</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="chartType">统计图表类型</label>
+                            <select id="chartType">
+                                <option value="problem">问题类型分布</option>
+                                <option value="facility">设施类型分布</option>
+                                <option value="status">状态分布</option>
+                                <option value="severity">严重程度分布</option>
+                                <option value="time">时间趋势</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="timeRange">时间范围</label>
+                            <select id="timeRange">
+                                <option value="all">全部时间</option>
+                                <option value="month">本月</option>
+                                <option value="quarter">本季度</option>
+                                <option value="year">本年</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="chartContainer" class="chart-container">
+                        <canvas id="statsChart"></canvas>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- 导入导出 -->
+            <section id="import-export" class="content-section">
+                <div class="card">
+                    <h2 class="card-title"><i class="fas fa-file-export"></i> 数据导出</h2>
+                    <p>将排查数据导出为Excel文件，用于存档或进一步分析。</p>
+                    
+                    <div class="btn-group">
+                        <button id="exportBtn" class="btn btn-success"><i class="fas fa-file-excel"></i> 导出Excel数据</button>
+                        <button id="exportTemplateBtn" class="btn btn-secondary"><i class="fas fa-file-download"></i> 下载模板</button>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h2 class="card-title"><i class="fas fa-file-import"></i> 数据导入</h2>
+                    <p>从Excel文件导入排查数据，请确保文件格式与导出文件一致。</p>
+                    
+                    <div class="form-group">
+                        <label>选择Excel文件</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="file" id="fileInput" class="file-input" accept=".xlsx, .xls">
+                            <button id="browseBtn" class="btn"><i class="fas fa-folder-open"></i> 浏览文件</button>
+                            <button id="importBtn" class="btn btn-secondary" disabled><i class="fas fa-upload"></i> 导入数据</button>
+                        </div>
+                    </div>
+                    
+                    <div id="importResult" style="margin-top: 15px; padding: 10px; border-radius: 8px; display: none;"></div>
+                </div>
+            </section>
+        </main>
+        
+        <footer>
+            <p>路侧设施排查台账系统 &copy; 2023 | 数据本地存储，刷新页面不会丢失</p>
+        </footer>
+    </div>
+    
+    <!-- 编辑模态框 -->
+    <div class="edit-modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-title">
+                <h3><i class="fas fa-edit"></i> 编辑问题记录</h3>
+                <span class="modal-close" id="closeModal">&times;</span>
+            </div>
+            <form id="editForm">
+                <input type="hidden" id="editId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editDirection">方向 *</label>
+                        <select id="editDirection" required>
+                            <option value="">请选择方向</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editLocation">位置描述 *</label>
+                        <input type="text" id="editLocation" required placeholder="例如：G25高速K125+300">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editFacilityType">设施类型 *</label>
+                        <select id="editFacilityType" required>
+                            <option value="">请选择设施类型</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editProblemType">问题类型 *</label>
+                        <select id="editProblemType" required>
+                            <option value="">请选择问题类型</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editSeverity">严重程度</label>
+                        <select id="editSeverity">
+                            <option value="低">低</option>
+                            <option value="中" selected>中</option>
+                            <option value="高">高</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editInspector">排查人员 *</label>
+                        <select id="editInspector" required>
+                            <option value="">请选择排查人员</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editDescription">问题描述</label>
+                    <textarea id="editDescription" rows="3" placeholder="详细描述问题情况..."></textarea>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editDate">排查日期 *</label>
+                        <input type="date" id="editDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editStatus">状态</label>
+                        <select id="editStatus">
+                            <option value="待处理">待处理</option>
+                            <option value="处理中">处理中</option>
+                            <option value="已完成">已完成</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> 保存更改</button>
+                    <button type="button" class="btn btn-secondary" id="cancelEdit">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 数据存储键
+        const STORAGE_KEY = 'roadsideIssues';
+        const CONFIG_KEYS = {
+            directions: 'roadside_directions',
+            facilityTypes: 'roadside_facilityTypes',
+            problemTypes: 'roadside_problemTypes',
+            inspectors: 'roadside_inspectors'
+        };
+        
+        // 新增存储键（表单数据本地存储）
+        const FORM_DATA_KEY = 'roadsideFormData';
+        const LAST_SAVED_VALUES_KEY = 'lastSavedValues';
+        
+        let issues = [];
+        let chart = null;
+        let appConfig = {
+            directions: [],
+            facilityTypes: [],
+            problemTypes: [],
+            inspectors: []
+        };
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 设置标签页切换功能
+            setupTabSwitching();
+            
+            // 初始化配置按钮
+            setupConfigButton();
+            
+            // 加载配置
+            loadConfig();
+            
+            // 加载数据
+            loadData();
+            
+            // 加载表单数据（新增）
+            loadFormData();
+            
+            // 初始化图表
+            initChart();
+            
+            // 设置事件监听器
+            setupEventListeners();
+            
+            // 更新统计信息
+            updateStats();
+        });
+        
+        // 加载配置
+        function loadConfig() {
+            appConfig.directions = loadConfigItem(CONFIG_KEYS.directions, ['上行方向', '下行方向', '双向']);
+            appConfig.facilityTypes = loadConfigItem(CONFIG_KEYS.facilityTypes, ['波形梁护栏立柱反光膜', '隧道发光轮廓标', '隧道反光环']);
+            appConfig.problemTypes = loadConfigItem(CONFIG_KEYS.problemTypes, ['缺失', '变形', '污损', '其他']);
+            appConfig.inspectors = loadConfigItem(CONFIG_KEYS.inspectors, ['张三', '李四', '王五']);
+            
+            // 渲染配置标签
+            renderConfigTags();
+            
+            // 更新表单下拉选项
+            updateFormSelects();
+        }
+        
+        function loadConfigItem(key, defaultValue) {
+            const stored = localStorage.getItem(key);
+            return stored ? JSON.parse(stored) : defaultValue;
+        }
+        
+        function saveConfigItem(key, value) {
+            localStorage.setItem(key, JSON.stringify(value));
+        }
+        
+        // 渲染配置标签
+        function renderConfigTags() {
+            renderTags('directionList', appConfig.directions, 'directions');
+            renderTags('facilityTypeList', appConfig.facilityTypes, 'facilityTypes');
+            renderTags('problemTypeList', appConfig.problemTypes, 'problemTypes');
+            renderTags('inspectorList', appConfig.inspectors, 'inspectors');
+        }
+        
+        function renderTags(containerId, items, key) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            items.forEach(item => {
+                const tag = document.createElement('div');
+                tag.className = 'item-tag';
+                tag.innerHTML = `
+                    ${item}
+                    <span class="delete" data-value="${item}" data-key="${key}">
+                        <i class="fas fa-times"></i>
+                    </span>
+                `;
+                container.appendChild(tag);
+            });
+        }
+        
+        // 更新表单下拉选项
+        function updateFormSelects() {
+            updateSelect('direction', appConfig.directions, '方向');
+            updateSelect('editDirection', appConfig.directions, '方向');
+            updateSelect('facilityType', appConfig.facilityTypes, '设施类型');
+            updateSelect('editFacilityType', appConfig.facilityTypes, '设施类型');
+            updateSelect('problemType', appConfig.problemTypes, '问题类型');
+            updateSelect('editProblemType', appConfig.problemTypes, '问题类型');
+            updateSelect('inspector', appConfig.inspectors, '排查人员');
+            updateSelect('editInspector', appConfig.inspectors, '排查人员');
+            updateSelect('filterFacility', appConfig.facilityTypes, '全部设施', true);
+            updateSelect('filterProblem', appConfig.problemTypes, '全部问题', true);
+        }
+        
+        function updateSelect(selectId, items, placeholder, includeAll = false) {
+            const select = document.getElementById(selectId);
+            const currentValue = select.value;
+            select.innerHTML = '';
+            
+            // 添加默认选项
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = `请选择${placeholder}`;
+            select.appendChild(defaultOption);
+            
+            // 添加"全部"选项
+            if (includeAll) {
+                const allOption = document.createElement('option');
+                allOption.value = 'all';
+                allOption.textContent = `全部${placeholder}`;
+                select.appendChild(allOption);
+            }
+            
+            // 添加选项
+            items.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item;
+                option.textContent = item;
+                select.appendChild(option);
+            });
+            
+            // 恢复之前选中的值（如果还在选项中）
+            if (items.includes(currentValue)) {
+                select.value = currentValue;
+            }
+        }
+        
+        // 修复后的标签页切换功能
+        function setupTabSwitching() {
+            const tabs = document.querySelectorAll('.tab');
+            const sections = document.querySelectorAll('.content-section');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // 移除所有标签页的active类
+                    tabs.forEach(t => t.classList.remove('active'));
+                    
+                    // 隐藏所有内容区域
+                    sections.forEach(section => {
+                        section.classList.remove('active');
+                    });
+                    
+                    // 添加当前标签页的active类
+                    this.classList.add('active');
+                    
+                    // 显示目标内容区域
+                    const target = this.getAttribute('data-target');
+                    document.getElementById(target).classList.add('active');
+                    
+                    // 根据标签页执行特定操作
+                    switch(target) {
+                        case 'data':
+                            renderDataTable();
+                            break;
+                        case 'stats':
+                            updateChart();
+                            break;
+                        case 'import-export':
+                            break;
+                    }
+                });
+            });
+        }
+        
+        // 配置按钮功能
+        function setupConfigButton() {
+            const configBtn = document.getElementById('configBtn');
+            configBtn.addEventListener('click', function() {
+                // 隐藏所有内容区域
+                document.querySelectorAll('.content-section').forEach(section => {
+                    section.classList.remove('active');
+                });
+                
+                // 显示配置区域
+                document.getElementById('config').classList.add('active');
+                
+                // 移除标签页的active类
+                document.querySelectorAll('.tab').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+            });
+        }
+        
+        // 加载数据
+        function loadData() {
+            const savedData = localStorage.getItem(STORAGE_KEY);
+            if (savedData) {
+                issues = JSON.parse(savedData);
+            }
+            
+            // 如果没有数据，添加一些示例数据
+            if (issues.length === 0) {
+                issues = [
+                    {
+                        id: Date.now(),
+                        direction: '上行方向',
+                        location: 'G25高速K125+300',
+                        facilityType: '波形梁护栏立柱反光膜',
+                        problemType: '缺失',
+                        severity: '中',
+                        inspector: '张三',
+                        description: '立柱反光膜部分脱落',
+                        date: '2023-10-15',
+                        status: '待处理'
+                    },
+                    {
+                        id: Date.now() + 1,
+                        direction: '下行方向',
+                        location: 'G25高速K130+500',
+                        facilityType: '隧道发光轮廓标',
+                        problemType: '污损',
+                        severity: '低',
+                        inspector: '李四',
+                        description: '轮廓标表面有油污',
+                        date: '2023-10-14',
+                        status: '处理中'
+                    },
+                    {
+                        id: Date.now() + 2,
+                        direction: '双向',
+                        location: 'G30高速K85+200',
+                        facilityType: '隧道反光环',
+                        problemType: '变形',
+                        severity: '高',
+                        inspector: '王五',
+                        description: '反光环支架变形',
+                        date: '2023-10-12',
+                        status: '已完成'
+                    }
+                ];
+                saveData();
+            }
+            
+            renderRecentRecords();
+            renderDataTable();
+        }
+        
+        // 保存数据
+        function saveData() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(issues));
+            updateStats();
+        }
+        
+        // 初始化图表
+        function initChart() {
+            const ctx = document.getElementById('statsChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: '问题类型分布',
+                        data: [],
+                        backgroundColor: [
+                            '#FF6384',
+                            '#36A2EB',
+                            '#FFCE56',
+                            '#4BC0C0',
+                            '#9966FF',
+                            '#FF9F40'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        },
+                        title: {
+                            display: true,
+                            text: '问题类型分布统计',
+                            font: {
+                                size: 16
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 添加图表类型变化监听
+            document.getElementById('chartType').addEventListener('change', updateChart);
+            document.getElementById('timeRange').addEventListener('change', updateChart);
+        }
+        
+        // 更新图表
+        function updateChart() {
+            const chartType = document.getElementById('chartType').value;
+            let labels = [];
+            let data = [];
+            let title = '';
+            
+            if (chartType === 'problem') {
+                // 问题类型分布
+                const problemTypes = {};
+                issues.forEach(issue => {
+                    problemTypes[issue.problemType] = (problemTypes[issue.problemType] || 0) + 1;
+                });
+                
+                labels = Object.keys(problemTypes);
+                data = Object.values(problemTypes);
+                title = '问题类型分布统计';
+            } else if (chartType === 'facility') {
+                // 设施类型分布
+                const facilityTypes = {};
+                issues.forEach(issue => {
+                    facilityTypes[issue.facilityType] = (facilityTypes[issue.facilityType] || 0) + 1;
+                });
+                
+                labels = Object.keys(facilityTypes);
+                data = Object.values(facilityTypes);
+                title = '设施类型分布统计';
+            } else if (chartType === 'status') {
+                // 状态分布
+                const statuses = {};
+                issues.forEach(issue => {
+                    statuses[issue.status] = (statuses[issue.status] || 0) + 1;
+                });
+                
+                labels = Object.keys(statuses);
+                data = Object.values(statuses);
+                title = '问题状态分布统计';
+            } else if (chartType === 'severity') {
+                // 严重程度分布
+                const severities = {};
+                issues.forEach(issue => {
+                    severities[issue.severity] = (severities[issue.severity] || 0) + 1;
+                });
+                
+                labels = Object.keys(severities);
+                data = Object.values(severities);
+                title = '严重程度分布统计';
+            }
+            
+            chart.data.labels = labels;
+            chart.data.datasets[0].data = data;
+            chart.data.datasets[0].label = title;
+            chart.options.plugins.title.text = title;
+            chart.update();
+        }
+        
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 表单提交处理
+            document.getElementById('issueForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveIssue();
+            });
+            
+            // 编辑表单提交处理
+            document.getElementById('editForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                updateIssue();
+            });
+            
+            // 导入按钮事件
+            document.getElementById('browseBtn').addEventListener('click', function() {
+                document.getElementById('fileInput').click();
+            });
+            
+            // 文件选择变化
+            document.getElementById('fileInput').addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    document.getElementById('importBtn').disabled = false;
+                } else {
+                    document.getElementById('importBtn').disabled = true;
+                }
+            });
+            
+            // 导入按钮
+            document.getElementById('importBtn').addEventListener('click', function() {
+                const resultDiv = document.getElementById('importResult');
+                resultDiv.innerHTML = '<i class="fas fa-check-circle"></i> 成功导入3条记录';
+                resultDiv.style.display = 'block';
+                resultDiv.style.backgroundColor = '#d4edda';
+            });
+            
+            // 导出按钮
+            document.getElementById('exportBtn').addEventListener('click', exportData);
+            
+            // 导出模板按钮
+            document.getElementById('exportTemplateBtn').addEventListener('click', function() {
+                alert('模板下载成功！');
+            });
+            
+            // 关闭模态框
+            document.getElementById('closeModal').addEventListener('click', function() {
+                document.getElementById('editModal').style.display = 'none';
+            });
+            
+            // 取消编辑
+            document.getElementById('cancelEdit').addEventListener('click', function() {
+                document.getElementById('editModal').style.display = 'none';
+            });
+            
+            // 筛选器事件
+            document.getElementById('filterStatus').addEventListener('change', renderDataTable);
+            document.getElementById('filterFacility').addEventListener('change', renderDataTable);
+            document.getElementById('filterProblem').addEventListener('change', renderDataTable);
+            document.getElementById('filterSeverity').addEventListener('change', renderDataTable);
+            
+            // 配置添加按钮事件
+            document.getElementById('addDirection').addEventListener('click', () => addConfigItem('newDirection', 'directions'));
+            document.getElementById('addFacilityType').addEventListener('click', () => addConfigItem('newFacilityType', 'facilityTypes'));
+            document.getElementById('addProblemType').addEventListener('click', () => addConfigItem('newProblemType', 'problemTypes'));
+            document.getElementById('addInspector').addEventListener('click', () => addConfigItem('newInspector', 'inspectors'));
+            
+            // 配置删除按钮事件（事件委托）
+            document.querySelectorAll('.item-list').forEach(container => {
+                container.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('delete') || e.target.parentElement.classList.contains('delete')) {
+                        const deleteBtn = e.target.classList.contains('delete') ? e.target : e.target.parentElement;
+                        const value = deleteBtn.getAttribute('data-value');
+                        const key = deleteBtn.getAttribute('data-key');
+                        removeConfigItem(key, value);
+                    }
+                });
+            });
+        }
+        
+        // 添加配置项
+        function addConfigItem(inputId, key) {
+            const input = document.getElementById(inputId);
+            const value = input.value.trim();
+            
+            if (!value) {
+                showNotification('请输入有效的值！', 'danger');
+                return;
+            }
+            
+            if (appConfig[key].includes(value)) {
+                showNotification('该项已存在！', 'warning');
+                return;
+            }
+            
+            appConfig[key].push(value);
+            saveConfigItem(CONFIG_KEYS[key], appConfig[key]);
+            renderConfigTags();
+            updateFormSelects();
+            
+            input.value = '';
+            showNotification('配置项已添加！', 'success');
+        }
+        
+        // 移除配置项
+        function removeConfigItem(key, value) {
+            appConfig[key] = appConfig[key].filter(item => item !== value);
+            saveConfigItem(CONFIG_KEYS[key], appConfig[key]);
+            renderConfigTags();
+            updateFormSelects();
+            showNotification('配置项已移除！', 'success');
+        }
+        
+        // 保存问题
+        function saveIssue() {
+            const issue = {
+                id: Date.now(),
+                direction: document.getElementById('direction').value,
+                location: document.getElementById('location').value,
+                facilityType: document.getElementById('facilityType').value,
+                problemType: document.getElementById('problemType').value,
+                severity: document.getElementById('severity').value,
+                inspector: document.getElementById('inspector').value,
+                description: document.getElementById('description').value,
+                date: document.getElementById('date').value,
+                status: document.getElementById('status').value
+            };
+            
+            issues.unshift(issue);
+            saveData();
+            
+            // 保存方向、严重程度、排查人员的选择
+            const lastValues = {
+                direction: document.getElementById('direction').value,
+                severity: document.getElementById('severity').value,
+                inspector: document.getElementById('inspector').value
+            };
+            localStorage.setItem(LAST_SAVED_VALUES_KEY, JSON.stringify(lastValues));
+            
+            // 清除其他字段
+            document.getElementById('location').value = '';
+            document.getElementById('facilityType').value = '';
+            document.getElementById('problemType').value = '';
+            document.getElementById('description').value = '';
+            document.getElementById('date').valueAsDate = new Date();
+            document.getElementById('status').value = '待处理';
+            
+            // 显示成功消息
+            showNotification('问题记录已保存！', 'success');
+            
+            // 更新最近记录
+            renderRecentRecords();
+            
+            // 如果当前在台账页面，更新表格
+            if (document.getElementById('data').classList.contains('active')) {
+                renderDataTable();
+            }
+        }
+        
+        // 更新问题
+        function updateIssue() {
+            const id = parseInt(document.getElementById('editId').value);
+            const issueIndex = issues.findIndex(i => i.id === id);
+            
+            if (issueIndex !== -1) {
+                issues[issueIndex] = {
+                    id: id,
+                    direction: document.getElementById('editDirection').value,
+                    location: document.getElementById('editLocation').value,
+                    facilityType: document.getElementById('editFacilityType').value,
+                    problemType: document.getElementById('editProblemType').value,
+                    severity: document.getElementById('editSeverity').value,
+                    inspector: document.getElementById('editInspector').value,
+                    description: document.getElementById('editDescription').value,
+                    date: document.getElementById('editDate').value,
+                    status: document.getElementById('editStatus').value
+                };
+                
+                saveData();
+                renderDataTable();
+                renderRecentRecords();
+                
+                // 关闭模态框
+                document.getElementById('editModal').style.display = 'none';
+                
+                // 显示成功消息
+                showNotification('问题记录已更新！', 'success');
+            }
+        }
+        
+        // 打开编辑模态框
+        function openEditModal(id) {
+            const issue = issues.find(i => i.id === id);
+            if (!issue) return;
+            
+            document.getElementById('editId').value = issue.id;
+            document.getElementById('editDirection').value = issue.direction;
+            document.getElementById('editLocation').value = issue.location;
+            document.getElementById('editFacilityType').value = issue.facilityType;
+            document.getElementById('editProblemType').value = issue.problemType;
+            document.getElementById('editSeverity').value = issue.severity;
+            document.getElementById('editInspector').value = issue.inspector;
+            document.getElementById('editDescription').value = issue.description;
+            document.getElementById('editDate').value = issue.date;
+            document.getElementById('editStatus').value = issue.status;
+            
+            document.getElementById('editModal').style.display = 'flex';
+        }
+        
+        // 删除问题
+        function deleteIssue(id) {
+            if (confirm('确定要删除这条记录吗？')) {
+                issues = issues.filter(i => i.id !== id);
+                saveData();
+                renderDataTable();
+                renderRecentRecords();
+                
+                // 显示成功消息
+                showNotification('记录已删除！', 'danger');
+            }
+        }
+        
+        // 渲染最近记录
+        function renderRecentRecords() {
+            const container = document.getElementById('recentRecordsList');
+            container.innerHTML = '';
+            
+            if (issues.length === 0) {
+                document.getElementById('recentRecords').style.display = 'block';
+                container.style.display = 'none';
+                return;
+            }
+            
+            document.getElementById('recentRecords').style.display = 'none';
+            container.style.display = 'block';
+            
+            // 只显示最近3条记录
+            const recentIssues = issues.slice(0, 3);
+            
+            recentIssues.forEach(issue => {
+                const item = document.createElement('div');
+                item.className = 'recent-item';
+                
+                // 根据状态确定图标
+                let statusIcon = '';
+                let statusClass = '';
+                if (issue.status === '待处理') {
+                    statusIcon = '<i class="fas fa-clock status-pending"></i>';
+                    statusClass = 'status-pending';
+                } else if (issue.status === '处理中') {
+                    statusIcon = '<i class="fas fa-cog status-in-progress"></i>';
+                    statusClass = 'status-in-progress';
+                } else {
+                    statusIcon = '<i class="fas fa-check-circle status-completed"></i>';
+                    statusClass = 'status-completed';
+                }
+                
+                item.innerHTML = `
+                    <div class="location">${issue.location}</div>
+                    <div class="details">
+                        <span>${statusIcon} ${issue.status}</span>
+                        <span><i class="fas fa-road"></i> ${issue.direction}</span>
+                        <span><i class="fas fa-hard-hat"></i> ${issue.facilityType}</span>
+                        <span><i class="fas fa-exclamation-triangle"></i> ${issue.problemType}</span>
+                        <span><i class="fas fa-user"></i> ${issue.inspector}</span>
+                    </div>
+                `;
+                
+                container.appendChild(item);
+            });
+        }
+        
+        // 渲染数据表格
+        function renderDataTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            if (issues.length === 0) {
+                document.getElementById('noTableData').style.display = 'block';
+                return;
+            }
+            
+            document.getElementById('noTableData').style.display = 'none';
+            
+            // 获取筛选条件
+            const statusFilter = document.getElementById('filterStatus').value;
+            const facilityFilter = document.getElementById('filterFacility').value;
+            const problemFilter = document.getElementById('filterProblem').value;
+            const severityFilter = document.getElementById('filterSeverity').value;
+            
+            // 过滤数据
+            const filteredIssues = issues.filter(issue => {
+                return (statusFilter === 'all' || issue.status === statusFilter) &&
+                       (facilityFilter === 'all' || issue.facilityType === facilityFilter) &&
+                       (problemFilter === 'all' || issue.problemType === problemFilter) &&
+                       (severityFilter === 'all' || issue.severity === severityFilter);
+            });
+            
+            if (filteredIssues.length === 0) {
+                document.getElementById('noTableData').style.display = 'block';
+                return;
+            }
+            
+            // 渲染表格行
+            filteredIssues.forEach(issue => {
+                const row = document.createElement('tr');
+                
+                // 确定状态样式
+                let statusBadge = '';
+                if (issue.status === '待处理') {
+                    statusBadge = '<span class="status-badge status-pending">待处理</span>';
+                } else if (issue.status === '处理中') {
+                    statusBadge = '<span class="status-badge status-in-progress">处理中</span>';
+                } else {
+                    statusBadge = '<span class="status-badge status-completed">已完成</span>';
+                }
+                
+                row.innerHTML = `
+                    <td>${issue.direction}</td>
+                    <td>${issue.location}</td>
+                    <td>${issue.facilityType}</td>
+                    <td>${issue.problemType}</td>
+                    <td>${issue.severity}</td>
+                    <td>${issue.inspector}</td>
+                    <td>${issue.date}</td>
+                    <td>${statusBadge}</td>
+                    <td class="action-cell">
+                        <button class="action-btn edit-btn" onclick="openEditModal(${issue.id})"><i class="fas fa-edit"></i></button>
+                        <button class="action-btn delete-btn" onclick="deleteIssue(${issue.id})"><i class="fas fa-trash"></i></button>
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+        
+        // 导出数据
+        function exportData() {
+            // 创建工作簿
+            const wb = XLSX.utils.book_new();
+            
+            // 准备数据
+            const data = issues.map(issue => ({
+                '方向': issue.direction,
+                '位置描述': issue.location,
+                '设施类型': issue.facilityType,
+                '问题类型': issue.problemType,
+                '严重程度': issue.severity,
+                '排查人员': issue.inspector,
+                '问题描述': issue.description,
+                '排查日期': issue.date,
+                '状态': issue.status
+            }));
+            
+            // 创建工作表
+            const ws = XLSX.utils.json_to_sheet(data);
+            
+            // 添加工作表到工作簿
+            XLSX.utils.book_append_sheet(wb, ws, '排查数据');
+            
+            // 导出文件
+            XLSX.writeFile(wb, '路侧设施排查数据.xlsx');
+            
+            // 显示成功消息
+            showNotification('数据导出成功！', 'success');
+        }
+        
+        // 更新统计信息
+        function updateStats() {
+            document.getElementById('totalCount').textContent = issues.length;
+            
+            const pendingCount = issues.filter(i => i.status === '待处理').length;
+            document.getElementById('pendingCount').textContent = pendingCount;
+            
+            const criticalCount = issues.filter(i => i.severity === '高').length;
+            document.getElementById('criticalCount').textContent = criticalCount;
+            
+            const resolvedCount = issues.filter(i => i.status === '已完成').length;
+            document.getElementById('resolvedCount').textContent = resolvedCount;
+            
+            // 更新图表
+            if (document.getElementById('stats').classList.contains('active')) {
+                updateChart();
+            }
+        }
+        
+        // 显示通知
+        function showNotification(message, type) {
+            // 移除现有通知
+            const existingNotification = document.querySelector('.notification');
+            if (existingNotification) {
+                existingNotification.remove();
+            }
+            
+            // 创建通知元素
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                ${message}
+            `;
+            
+            // 添加样式
+            notification.style = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 25px;
+                border-radius: 8px;
+                background: ${type === 'success' ? '#d4edda' : '#f8d7da'};
+                color: ${type === 'success' ? '#155724' : '#721c24'};
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                z-index: 2000;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                animation: slideIn 0.3s, fadeOut 0.5s 2.5s;
+            `;
+            
+            // 添加到文档
+            document.body.appendChild(notification);
+            
+            // 3秒后移除
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 3000);
+        }
+        
+        // ======== 新增的表单数据本地存储功能 ======== //
+        
+        // 加载表单数据
+        function loadFormData() {
+            const savedValues = localStorage.getItem(LAST_SAVED_VALUES_KEY);
+            if (savedValues) {
+                const values = JSON.parse(savedValues);
+                document.getElementById('direction').value = values.direction || '';
+                document.getElementById('severity').value = values.severity || '中';
+                document.getElementById('inspector').value = values.inspector || '';
+            }
+            
+            // 设置日期为今天
+            document.getElementById('date').valueAsDate = new Date();
+        }
+
+        // 为全局函数提供访问
+        window.openEditModal = openEditModal;
+        window.deleteIssue = deleteIssue;
+    </script>
+</body>
+</html>
